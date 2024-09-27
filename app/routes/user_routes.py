@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..schemas.user_schema import UserCreate, UserResponse, LoginRequest
 from ..services.user_service import create_user, get_user_by_email
-from ..services.auth_service import verify_password, create_access_token
-from ..dependencies import get_db
+from ..services.auth_service import verify_password, create_access_token, oauth2_scheme, decode_access_token
+from ..dependencies import get_db, get_current_user
+from jose import JWTError
 
 router = APIRouter()
 
@@ -25,3 +26,9 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     # Generate JWT token
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
+
+# Protected route to retrieve user info
+# Route to show the current logged-in user's email
+@router.get("/me")
+def read_logged_in_user_email(current_user: dict = Depends(get_current_user)):
+    return {"email": current_user.email}
