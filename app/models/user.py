@@ -7,8 +7,8 @@ class User(Base):
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    email = Column(String, unique=True, index=True)
-    resume_url = Column(String)
+    name = Column(String(50))
+    email = Column(String(50), unique=True, index=True)
+    resume_url = Column(String(100))
     job_preferences = Column(JSON)
-    hashed_password = Column(String)
+    hashed_password = Column(String(255))
