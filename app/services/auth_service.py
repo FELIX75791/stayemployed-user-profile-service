@@ -8,13 +8,16 @@ from fastapi.security import OAuth2PasswordBearer
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
+
 # Hash password
 def get_password_hash(password: str):
     return pwd_context.hash(password)
 
+
 # Verify password
 def verify_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
+
 
 # Create JWT access token
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -29,7 +32,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
 # Decode a JWT access token
 def decode_access_token(token: str):
     return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-

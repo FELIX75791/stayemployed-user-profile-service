@@ -8,6 +8,7 @@ from jose import JWTError
 
 router = APIRouter()
 
+
 # Signup route
 @router.post("/signup", response_model=UserResponse)
 def signup(user: UserCreate, db: Session = Depends(get_db)):
@@ -15,6 +16,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     return create_user(db, user)
+
 
 # Login route
 @router.post("/login")
@@ -26,6 +28,7 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     # Generate JWT token
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 # Protected route to retrieve user info
 # Route to show the current logged-in user's email

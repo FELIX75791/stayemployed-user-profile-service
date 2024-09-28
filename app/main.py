@@ -11,6 +11,7 @@ Base.metadata.create_all(bind=engine)
 # Include user-related routes
 app.include_router(user_routes.router)
 
+
 @app.get("/")
 async def root():
     return {"message": "Hello Bigger Applications!"}

@@ -3,6 +3,7 @@ from ..models.user import User
 from ..schemas.user_schema import UserCreate
 from ..services.auth_service import get_password_hash
 
+
 # Create a new user
 def create_user(db: Session, user: UserCreate):
     hashed_password = get_password_hash(user.password)
@@ -15,6 +16,7 @@ def create_user(db: Session, user: UserCreate):
     db.commit()
     db.refresh(db_user)
     return db_user
+
 
 # Get a user by email
 def get_user_by_email(db: Session, email: str):
