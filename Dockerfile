@@ -1,4 +1,4 @@
-# Use an official Python runtime based on Python 3.12-slim
+# Use an official Python runtime as a parent image
 FROM python:3.12-slim
 
 # Set the working directory in the container
@@ -20,5 +20,5 @@ EXPOSE 8080
 ENV DATABASE_URL=$DATABASE_URL
 ENV SECRET_KEY=$SECRET_KEY
 
-# Command to run the FastAPI app using Uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Command to run the FastAPI app using Uvicorn, correct path is app.main:app
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
