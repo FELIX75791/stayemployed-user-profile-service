@@ -35,6 +35,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
 
     return JSONResponse(content=user_response.dict(), headers=headers, status_code=201)
 
+
 # Login route
 @router.post("/login")
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
