@@ -48,15 +48,15 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.get("/info/{user_id}", response_model=UserResponse)
-def get_user_info(user_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+@router.get("/info/{user_email}", response_model=UserResponse)
+def get_user_info(user_email: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     # Fetch user information
-    user = get_user_by_id(db, user_id)
+    user = get_user_by_email(db, user_email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     # Check if the current user is allowed to access this information (optional)
-    if current_user.user_id != user_id:
+    if current_user.user_email != user_email:
         raise HTTPException(status_code=403, detail="Not authorized to access this user's information")
 
     return user
