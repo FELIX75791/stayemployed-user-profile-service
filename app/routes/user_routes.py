@@ -56,7 +56,7 @@ def get_user_info(user_email: str, db: Session = Depends(get_db), current_user: 
         raise HTTPException(status_code=404, detail="User not found")
 
     # Check if the current user is allowed to access this information (optional)
-    if current_user.user_email != user_email:
+    if current_user.email != user_email:
         raise HTTPException(status_code=403, detail="Not authorized to access this user's information")
 
     return user
