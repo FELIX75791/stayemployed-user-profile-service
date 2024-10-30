@@ -18,7 +18,7 @@ class UserResponse(BaseModel):
     job_preferences: Optional[Dict]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Schema for user login request
