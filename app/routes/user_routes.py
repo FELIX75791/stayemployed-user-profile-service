@@ -20,7 +20,6 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
 
     new_user = create_user(db, user)
 
-    # Convert the SQLAlchemy object to a Pydantic model
     user_response = UserResponse(
         user_id=new_user.user_id,
         name=new_user.name,
@@ -29,11 +28,13 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
         job_preferences=new_user.job_preferences
     )
 
-    # Create a Link header pointing to the login URL
-    login_url = "/users/login"
-    headers = {"Link": f"<{login_url}>; rel='next'"}
+    # Add HATEOAS links
+    response_content = user_response.dict()
+    response_content["links"] = [
+        {"rel": "login", "href": "/login", "method": "POST"},
+    ]
 
-    return JSONResponse(content=user_response.dict(), headers=headers, status_code=201)
+    return JSONResponse(content=response_content, status_code=201)
 
 
 # Login route
@@ -45,21 +46,42 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 
     # Generate JWT token
     access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    # Add HATEOAS links
+    response_content = {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "links": [
+            {"rel": "self", "href": "/login", "method": "POST"},
+            {"rel": "info", "href": f"/info/{user.email}", "method": "GET"},
+            {"rel": "update", "href": f"/update/{user.user_id}", "method": "PUT"},
+            {"rel": "delete", "href": f"/delete/{user.user_id}", "method": "DELETE"},
+        ]
+    }
+    return response_content
 
 
+# Get user info
 @router.get("/info/{user_email}", response_model=UserResponse)
 def get_user_info(user_email: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    # Fetch user information
     user = get_user_by_email(db, user_email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Check if the current user is allowed to access this information (optional)
     if current_user.email != user_email:
         raise HTTPException(status_code=403, detail="Not authorized to access this user's information")
 
-    return user
+    user_response = UserResponse.model_validate(user)
+
+    # Add HATEOAS links
+    response_content = user_response.model_dump()
+    response_content["links"] = [
+        {"rel": "self", "href": f"/info/{user_email}", "method": "GET"},
+        {"rel": "update", "href": f"/update/{user.user_id}", "method": "PUT"},
+        {"rel": "delete", "href": f"/delete/{user.user_id}", "method": "DELETE"},
+    ]
+
+    return JSONResponse(content=response_content)
 
 
 # Update user details
@@ -68,7 +90,20 @@ def update_user_details(user_id: int, user_data: UserUpdate, db: Session = Depen
                         current_user: dict = Depends(get_current_user)):
     if current_user.user_id != user_id:
         raise HTTPException(status_code=403, detail="Not authorized to update this user")
-    return update_user(db, user_id, user_data)
+
+    updated_user = update_user(db, user_id, user_data)
+
+    user_response = UserResponse.model_validate(updated_user)
+
+    # Add HATEOAS links
+    response_content = user_response.model_dump()
+    response_content["links"] = [
+        {"rel": "self", "href": f"/update/{user_id}", "method": "PUT"},
+        {"rel": "info", "href": f"/info/{updated_user.email}", "method": "GET"},
+        {"rel": "delete", "href": f"/delete/{user_id}", "method": "DELETE"},
+    ]
+
+    return JSONResponse(content=response_content)
 
 
 # Delete user
@@ -78,4 +113,13 @@ def delete_user_account(user_id: int, db: Session = Depends(get_db), current_use
         raise HTTPException(status_code=403, detail="Not authorized to delete this user")
     if not delete_user(db, user_id):
         raise HTTPException(status_code=404, detail="User not found")
-    return {"message": "User successfully deleted"}
+
+    # Add HATEOAS link to signup after deletion
+    response_content = {
+        "message": "User successfully deleted",
+        "links": [
+            {"rel": "signup", "href": "/signup", "method": "POST"}
+        ]
+    }
+
+    return JSONResponse(content=response_content, status_code=status.HTTP_204_NO_CONTENT)
