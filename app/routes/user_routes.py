@@ -123,3 +123,25 @@ def delete_user_account(user_id: int, db: Session = Depends(get_db), current_use
     }
 
     return JSONResponse(content=response_content, status_code=status.HTTP_204_NO_CONTENT)
+
+@router.get("/me", response_model=UserResponse)
+def get_current_user_info(current_user: dict = Depends(get_current_user)):
+    """
+    Returns the current logged-in user's information.
+    """
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not logged in. Please log in to access your profile.",
+        )
+
+    user_response = UserResponse.model_validate(current_user)
+
+    response_content = user_response.model_dump()
+    response_content["links"] = [
+        {"rel": "self", "href": "/me", "method": "GET"},
+        {"rel": "update", "href": f"/update/{current_user.user_id}", "method": "PUT"},
+        {"rel": "delete", "href": f"/delete/{current_user.user_id}", "method": "DELETE"},
+    ]
+
+    return JSONResponse(content=response_content)
