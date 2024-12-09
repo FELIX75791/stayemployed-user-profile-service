@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import EmailStr
 from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
+from typing import List
 
 from ..schemas.user_schema import UserCreate, UserResponse, LoginRequest, UserUpdate
-from ..services.user_service import create_user, get_user_by_email, update_user, delete_user, get_user_by_id
+from ..services.user_service import create_user, get_user_by_email, update_user, delete_user, get_user_by_id, get_user_emails_with_notifications_enabled
 from ..services.auth_service import verify_password, create_access_token, oauth2_scheme, decode_access_token
 from ..dependencies import get_db, get_current_user
 from jose import JWTError
@@ -25,7 +27,8 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
         name=new_user.name,
         email=new_user.email,
         resume_url=new_user.resume_url,
-        job_preferences=new_user.job_preferences
+        job_preferences=new_user.job_preferences,
+        notification_preference=new_user.notification_preference
     )
 
     # Add HATEOAS links
@@ -145,3 +148,13 @@ def get_current_user_info(current_user: dict = Depends(get_current_user)):
     ]
 
     return JSONResponse(content=response_content)
+
+@router.get("/users/notifications-enabled", response_model=List[EmailStr])
+def get_users_notifications_enabled(db: Session = Depends(get_db)):
+    user_emails = get_user_emails_with_notifications_enabled(db)
+
+    # Flatten the list of tuples into a plain list of emails
+    return [email[0] for email in user_emails] if user_emails else []
+
+
+

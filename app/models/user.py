@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.dialects.mysql import JSON
 from ..db import Base
 
@@ -12,3 +12,4 @@ class User(Base):
     resume_url = Column(String(100))
     job_preferences = Column(JSON)
     hashed_password = Column(String(255))
+    notification_preference = Column(Boolean, default=True)
