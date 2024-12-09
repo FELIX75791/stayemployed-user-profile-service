@@ -10,7 +10,8 @@ def create_user(db: Session, user: UserCreate):
     db_user = User(
         name=user.name,
         email=user.email,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        notification_preference=True
     )
     db.add(db_user)
     db.commit()
@@ -32,10 +33,12 @@ def get_user_by_id(db: Session, user_id: int):
 def update_user(db: Session, user_id: int, user_data: UserUpdate):
     db_user = get_user_by_id(db, user_id)
     if db_user:
-        if user_data.resume_url:
+        if user_data.resume_url is not None:
             db_user.resume_url = user_data.resume_url
-        if user_data.job_preferences:
+        if user_data.job_preferences is not None:
             db_user.job_preferences = user_data.job_preferences
+        if user_data.notification_preference is not None:  # Add this logic
+            db_user.notification_preference = user_data.notification_preference
         db.commit()
         db.refresh(db_user)
     return db_user
@@ -49,3 +52,7 @@ def delete_user(db: Session, user_id: int):
         db.commit()
         return True
     return False
+
+def get_user_emails_with_notifications_enabled(db: Session):
+    return db.query(User.email).filter(User.notification_preference == True).all()
+
