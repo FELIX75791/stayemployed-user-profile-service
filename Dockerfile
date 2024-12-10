@@ -16,9 +16,5 @@ COPY . /app
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 
-# Define environment variables for database URL and secret key (can be set dynamically in ECS)
-ENV DATABASE_URL=$DATABASE_URL
-ENV SECRET_KEY=$SECRET_KEY
-
 # Command to run the FastAPI app using Uvicorn, correct path is app.main:app
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
