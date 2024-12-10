@@ -165,5 +165,32 @@ def get_users_notifications_enabled(db: Session = Depends(get_db)):
     # Flatten the list of tuples into a plain list of emails
     return [email[0] for email in user_emails] if user_emails else []
 
+@router.get("/preferences", response_model=dict)
+def get_user_preferences(current_user: dict = Depends(get_current_user)):
+    """
+    Protected route to retrieve the user's preferences:
+    employment_type_preference, location_preference, and keyword_preference.
+    """
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not logged in. Please log in to access preferences.",
+        )
+
+    # Convert employment_type_preference to frontend-compatible format
+    employment_type = None
+    if current_user.employment_type_preference == EmploymentType.FullTime:
+        employment_type = "Full Time"
+    elif current_user.employment_type_preference == EmploymentType.PartTime:
+        employment_type = "Part Time"
+
+    preferences = {
+        "employment_type_preference": employment_type,
+        "location_preference": current_user.location_preference,
+        "keyword_preference": current_user.keyword_preference,
+    }
+
+    return JSONResponse(content=preferences)
+
 
 
