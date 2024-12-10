@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from ..models.user import User
+from ..models.user import User, EmploymentType
 from ..schemas.user_schema import UserCreate, UserUpdate
 from ..services.auth_service import get_password_hash
 
@@ -31,18 +31,26 @@ def get_user_by_id(db: Session, user_id: int):
 
 # Update user details
 def update_user(db: Session, user_id: int, user_data: UserUpdate):
-    db_user = get_user_by_id(db, user_id)
+    db_user = db.query(User).filter(User.user_id == user_id).first()
     if db_user:
         if user_data.resume_url is not None:
             db_user.resume_url = user_data.resume_url
-        if user_data.job_preferences is not None:
-            db_user.job_preferences = user_data.job_preferences
-        if user_data.notification_preference is not None:  # Add this logic
+        if user_data.location_preference is not None:
+            db_user.location_preference = user_data.location_preference
+        if user_data.keyword_preference is not None:
+            db_user.keyword_preference = user_data.keyword_preference
+        if user_data.employment_type_preference is not None:
+            # Convert FullTime -> Full Time and PartTime -> Part Time
+            if user_data.employment_type_preference == "FullTime":
+                db_user.employment_type_preference = EmploymentType.FullTime
+            elif user_data.employment_type_preference == "PartTime":
+                db_user.employment_type_preference = EmploymentType.PartTime
+        if user_data.notification_preference is not None:
             db_user.notification_preference = user_data.notification_preference
+
         db.commit()
         db.refresh(db_user)
     return db_user
-
 
 # Delete user
 def delete_user(db: Session, user_id: int):

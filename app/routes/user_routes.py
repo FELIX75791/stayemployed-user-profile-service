@@ -4,11 +4,11 @@ from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
 from typing import List
 
+from ..models.user import EmploymentType
 from ..schemas.user_schema import UserCreate, UserResponse, LoginRequest, UserUpdate
 from ..services.user_service import create_user, get_user_by_email, update_user, delete_user, get_user_by_id, get_user_emails_with_notifications_enabled
 from ..services.auth_service import verify_password, create_access_token, oauth2_scheme, decode_access_token
 from ..dependencies import get_db, get_current_user
-from jose import JWTError
 
 router = APIRouter()
 
@@ -27,11 +27,12 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
         name=new_user.name,
         email=new_user.email,
         resume_url=new_user.resume_url,
-        job_preferences=new_user.job_preferences,
+        location_preference=new_user.location_preference,  # Will be None
+        keyword_preference=new_user.keyword_preference,    # Will be None
+        employment_type_preference=new_user.employment_type_preference,  # Will be None
         notification_preference=new_user.notification_preference
     )
 
-    # Add HATEOAS links
     response_content = user_response.dict()
     response_content["links"] = [
         {"rel": "login", "href": "/login", "method": "POST"},
@@ -74,17 +75,13 @@ def get_user_info(user_email: str, db: Session = Depends(get_db), current_user: 
     if current_user.email != user_email:
         raise HTTPException(status_code=403, detail="Not authorized to access this user's information")
 
-    user_response = UserResponse.model_validate(user)
+    # Convert employment_type_preference to the response format
+    if user.employment_type_preference == "Full Time":
+        user.employment_type_preference = "FullTime"
+    elif user.employment_type_preference == "Part Time":
+        user.employment_type_preference = "PartTime"
 
-    # Add HATEOAS links
-    response_content = user_response.model_dump()
-    response_content["links"] = [
-        {"rel": "self", "href": f"/info/{user_email}", "method": "GET"},
-        {"rel": "update", "href": f"/update/{user.user_id}", "method": "PUT"},
-        {"rel": "delete", "href": f"/delete/{user.user_id}", "method": "DELETE"},
-    ]
-
-    return JSONResponse(content=response_content)
+    return UserResponse.model_validate(user)
 
 
 # Update user details
@@ -96,9 +93,14 @@ def update_user_details(user_id: int, user_data: UserUpdate, db: Session = Depen
 
     updated_user = update_user(db, user_id, user_data)
 
+    # Convert employment_type_preference to string format
+    if updated_user.employment_type_preference == EmploymentType.FullTime:
+        updated_user.employment_type_preference = "FullTime"
+    elif updated_user.employment_type_preference == EmploymentType.PartTime:
+        updated_user.employment_type_preference = "PartTime"
+
     user_response = UserResponse.model_validate(updated_user)
 
-    # Add HATEOAS links
     response_content = user_response.model_dump()
     response_content["links"] = [
         {"rel": "self", "href": f"/update/{user_id}", "method": "PUT"},
@@ -138,6 +140,12 @@ def get_current_user_info(current_user: dict = Depends(get_current_user)):
             detail="User not logged in. Please log in to access your profile.",
         )
 
+    # Convert employment_type_preference to string
+    if current_user.employment_type_preference == EmploymentType.FullTime:
+        current_user.employment_type_preference = "FullTime"
+    elif current_user.employment_type_preference == EmploymentType.PartTime:
+        current_user.employment_type_preference = "PartTime"
+
     user_response = UserResponse.model_validate(current_user)
 
     response_content = user_response.model_dump()
@@ -148,6 +156,7 @@ def get_current_user_info(current_user: dict = Depends(get_current_user)):
     ]
 
     return JSONResponse(content=response_content)
+
 
 @router.get("/users/notifications-enabled", response_model=List[EmailStr])
 def get_users_notifications_enabled(db: Session = Depends(get_db)):
