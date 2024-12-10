@@ -180,9 +180,9 @@ def get_user_preferences(current_user: dict = Depends(get_current_user)):
     # Convert employment_type_preference to frontend-compatible format
     employment_type = None
     if current_user.employment_type_preference == EmploymentType.FullTime:
-        employment_type = "FullTime"
+        employment_type = "Full Time"
     elif current_user.employment_type_preference == EmploymentType.PartTime:
-        employment_type = "PartTime"
+        employment_type = "Part Time"
 
     preferences = {
         "employment_type_preference": employment_type,
